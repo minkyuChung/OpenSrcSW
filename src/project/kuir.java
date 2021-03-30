@@ -15,7 +15,6 @@ public class kuir {
 				key.printXML();
 			}else if(args[0].equals("i"));{
 				indexer idx = new indexer(args[1]);						// ../index.xml
-				idx.saveKeyword();
 				idx.calculateTfIdf();
 			}
 		}
