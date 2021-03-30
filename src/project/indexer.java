@@ -1,14 +1,9 @@
 package project;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 
@@ -31,7 +26,7 @@ public class indexer {
 	}
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void saveKeyword() throws Exception {
+	public void calculateTfIdf() throws Exception {
 		DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
 		doc = docBuilder.parse(file); 
 		
@@ -39,9 +34,8 @@ public class indexer {
 		Element oBody = null;
 		String content = "";
 		
-		
 		//Hashmap ¿˙¿Â
-		FileOutputStream fileStream = new FileOutputStream("index.post");
+		FileOutputStream fileStream = new FileOutputStream("../index.post");
 		ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileStream);
 		
 		LinkedHashMap KeywordMap = new LinkedHashMap();
@@ -50,65 +44,38 @@ public class indexer {
 			oBody = (Element)list.item(i);	
 			content = oBody.getFirstChild().getNodeValue();
 			String[] pair = content.split("#");
-			
-			
-			
+		
 			for (int j = 0; j < pair.length; j++) {
 				String[] temp = pair[j].split(":");
-				
-				String[] tfidfList = new String[2*list.getLength()];
-				for (int idx = 0; idx < list.getLength(); idx++) {
-					tfidfList[2*idx] = String.valueOf(idx+1);
-					tfidfList[2*idx+1] = "0";
-				}
-				
+				ArrayList<Double> tfidfList;
 				if(KeywordMap.containsKey(temp[0])) {
-					tfidfList = (String[]) KeywordMap.get(temp[0]);
+					tfidfList =  (ArrayList<Double>) KeywordMap.get(temp[0]);
+				}else {
+					tfidfList = new ArrayList<Double>();
 				}
-				tfidfList[2*i+1] = temp[1];
+				
+				if(!temp[1].equals("0")) {
+					tfidfList.add(i+1.0);
+					tfidfList.add(Double.parseDouble(temp[1]));
+				}
 				KeywordMap.put(temp[0], tfidfList);
 			}
-			
 		}
-		objectOutputStream.writeObject(KeywordMap);
-		objectOutputStream.close();
-	}
-	
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public void calculateTfIdf() throws IOException, ClassNotFoundException {
-		FileInputStream fileStream = new FileInputStream("index.post");
-		ObjectInputStream objectInputStream = new ObjectInputStream(fileStream);
-		
-		Object object = objectInputStream.readObject();
-		objectInputStream.close();
-		
-		LinkedHashMap hashMap = (LinkedHashMap)object;
-		Iterator<String> it = hashMap.keySet().iterator();
-		int count;
+		Iterator<String> it = KeywordMap.keySet().iterator();
 		
 		while(it.hasNext()) {
 			String key = it.next();
-			String[] value =  (String[]) hashMap.get(key);
-			count = 0;
-			for (int i = 0; i < value.length/2; i++) {
-				if(!value[2*i+1].equals("0")) {
-					count++;
-				}
+			ArrayList<Double> value = (ArrayList<Double>) KeywordMap.get(key);
+			for (int k = 0; k < value.size()/2; k++) {
+				double wgt = value.get(2*k+1)*Math.log(list.getLength()/(value.size()/2.0));
+				value.set(2*k+1, wgt);
 			}
-			System.out.print(key+"->"+Arrays.toString(convertTfIdf(value, count))+" ");
+			KeywordMap.replace(key, value);
+			System.out.print(key+"->"+value+" ");
 		}
-	}
-	public String[] convertTfIdf(String[] value, int cnt) {
-		double wgt = 0;
-		double num = value.length/2;
-		for (int i = 0; i < value.length/2; i++) {
-			wgt = Integer.parseInt(value[2*i+1])*Math.log(num/cnt);
-			if(wgt == 0) {
-				continue;
-			}
-			value[2*i+1] = String.valueOf(Math.round(wgt*100)/100.0);
-		}
-		return value;
+		System.out.println();
+		objectOutputStream.writeObject(KeywordMap);
+		objectOutputStream.close();
 	}
 }
 
