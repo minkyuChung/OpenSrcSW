@@ -45,9 +45,9 @@ public class searcher {
 		NodeList list = doc.getElementsByTagName("title");
 		sim = new double[list.getLength()];
 		
-		sim = CalcSim(keyword, post);
+		CalcSim(keyword, post);
 		int[] grade = {1,2,3,4,5};
-		//ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+		//³ôÀº ¼ýÀÚ ¼øÀ¸·Î Á¤·Ä
 		for (int i = 0; i < sim.length-1; i++) {
 			for (int j = i; j < sim.length-1; j++) {
 				if(sim[j] < sim[j+1]) {
@@ -57,23 +57,30 @@ public class searcher {
 				}
 			}
 		}
-		System.out.println("##ï¿½ï¿½ï¿½çµµ ï¿½ï¿½ï¿½ï¿½##");
+		System.out.println("##À¯»çµµ ¼øÀ§##");
+		int cnt = 0;
 		for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < grade.length; j++) {
 				if(grade[j] == i+1) {
-					System.out.println(i+1+"ï¿½ï¿½ : "+ list.item(j).getFirstChild().getNodeValue().trim()+" / "+sim[j]);
+					if(sim[j]==0)	continue;
+					//¼Ò¼öÁ¡ 2ÀÚ¸®±îÁö ³ªÅ¸³»´Â ±â´É Ãß°¡
+					System.out.println(i+1+"À§ : "+ list.item(j).getFirstChild().getNodeValue().trim()+" / "+String.format("%.2f", sim[j]));
+					cnt++;
 				}
 			}
 		}
+		if(cnt == 0)
+			System.out.println("°ü·Ã ¹®¼­¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù.");
 	}
-	
-	//ï¿½ï¿½ï¿½çµµ ï¿½ï¿½ï¿½
-	@SuppressWarnings({ "rawtypes", "unchecked", "resource" })
-	public double[] innerProduct(String[] keyword, File post) throws Exception {
+	@SuppressWarnings({ "rawtypes", "unchecked", "resource", "null" })
+	public void CalcSim(String[] keyword, File post) throws Exception{
 		FileInputStream fileStream = new FileInputStream(post);
 		ObjectInputStream objectIntputStream = new ObjectInputStream(fileStream);
 		LinkedHashMap KeywordMap = new LinkedHashMap();
 		KeywordMap = (LinkedHashMap) objectIntputStream.readObject();
+		
+		double[] inner = innerProduct(keyword, post);
+		double[] pow = new double[sim.length];
 		
 		for (int i = 0; i < keyword.length; i++) {
 			Iterator<String> it = KeywordMap.keySet().iterator();
@@ -82,14 +89,46 @@ public class searcher {
 				ArrayList<Double> value = (ArrayList<Double>) KeywordMap.get(key);
 				if(key.equals(keyword[i])) {
 					for (int j = 0; j < value.size()/2; j++) {
-						sim[(int) (value.get(2*j)-1)] += value.get(2*j+1);
+						pow[(int) (value.get(2*j)-1)] += Math.pow(value.get(2*j+1),2);
 					}
 					break;
 				}
 			}
 		}
-		//ï¿½ï¿½ï¿½çµµ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ç¼ï¿½ï¿½ï¿½ ï¿½è¿­ ï¿½ï¿½È¯
-		return sim;
+		
+		for (int i = 0; i < sim.length; i++) {
+			//0ÀÎ °ªÀº ¼øÀ§ Ãâ·Â Á¦¿Ü
+			if(pow[i]==0)	continue;
+			sim[i] = inner[i]/(Math.sqrt(2*pow[i]));
+		}
+	}
+	
+	//À¯»çµµ °è»ê
+	@SuppressWarnings({ "rawtypes", "unchecked", "resource", "null" })
+	public double[] innerProduct(String[] keyword, File post) throws Exception {
+		FileInputStream fileStream = new FileInputStream(post);
+		ObjectInputStream objectIntputStream = new ObjectInputStream(fileStream);
+		LinkedHashMap KeywordMap = new LinkedHashMap();
+		KeywordMap = (LinkedHashMap) objectIntputStream.readObject();
+		
+		//Àü¿ªº¯¼ö ´ë½Å ³»ºÎ¿¡¼­ double ¹è¿­ ³Ñ°ÜÁÖ´Â ¹æ½Ä º¯°æÀÌ ÀÖ¾ú½À´Ï´Ù.
+		double[] inner = new double[sim.length];
+		
+		for (int i = 0; i < keyword.length; i++) {
+			Iterator<String> it = KeywordMap.keySet().iterator();
+			while(it.hasNext()) {
+				String key = it.next();
+				ArrayList<Double> value = (ArrayList<Double>) KeywordMap.get(key);
+				if(key.equals(keyword[i])) {
+					for (int j = 0; j < value.size()/2; j++) {
+						inner[(int) (value.get(2*j)-1)] += value.get(2*j+1);
+					}
+					break;
+				}
+			}
+		}
+		//À¯»çµµ ¼ø¼­´ë·Î ´ãÀº ½Ç¼öÇü ¹è¿­ ¹ÝÈ¯
+		return inner;
 	}
 }
 
@@ -101,4 +140,3 @@ public class searcher {
 
 
 
->>>>>>> feature
