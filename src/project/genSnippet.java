@@ -31,6 +31,7 @@ public class genSnippet {
 		FileInputStream fis = null;
 		String[] keyword = split(query);
 		String[] temp = new String[5];
+		int[] num = new int[5];
 		try {
 			fis = new FileInputStream(file);
 			isr = new InputStreamReader(fis,"UTF-8");
@@ -43,6 +44,7 @@ public class genSnippet {
 						count++;	
 					}
 				}
+				num[i] = count;
 				i++;
 			}
 		} catch (FileNotFoundException e1) {
@@ -56,7 +58,11 @@ public class genSnippet {
 			isr.close();
 			br.close();
 		}
-		
+		int max = 0;
+		for (int i = 0; i < num.length; i++) {
+			max = num[i] >num[i+1] ? i:i+1;
+		}
+		System.out.print(temp[max+1]);
 	}
 	
 }
